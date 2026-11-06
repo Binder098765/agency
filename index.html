@@ -416,7 +416,7 @@ const CONFIG = {
   calendly: "https://calendly.com/benayoune19/meeting-reventoai",
   linkedin: "https://www.linkedin.com/in/raed-benayoune/",
   // Optional: send every answer to you (Formspree, Make/Zapier webhook, Google Apps Script URL). Leave "" to skip.
-  formEndpoint: "",
+  formEndpoint: "https://script.google.com/macros/s/AKfycbwwO37wOD7X3ymbokUbTH74VswkJ40L139GwK_wLVOYw2TEj0qJXRqfe-_LvFwDTmc/exec",
   // Optional: paste a YouTube/Vimeo/Loom EMBED url (or an .mp4 link) to replace the built-in animated video.
   vslVideoUrl: "",
   // Who gets sent to the calendar. Lower index = smaller answer.
@@ -559,7 +559,14 @@ document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
     const p = payload(ok);
     try{ localStorage.setItem('revento_lead', JSON.stringify(p)); }catch(_){}
     if(CONFIG.formEndpoint){
-      try{ fetch(CONFIG.formEndpoint,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(p),keepalive:true}).catch(()=>{}); }catch(_){}
+      try{
+        if(/script\.google\.com/.test(CONFIG.formEndpoint)){
+          // Google Apps Script (Google Sheets): no CORS headers, so send as plain text and don't read the reply
+          fetch(CONFIG.formEndpoint,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(p),keepalive:true}).catch(()=>{});
+        } else {
+          fetch(CONFIG.formEndpoint,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(p),keepalive:true}).catch(()=>{});
+        }
+      }catch(_){}
     }
     document.getElementById('qbox').hidden = true;
     ok ? showCalendar(p) : showNoFit(p);
